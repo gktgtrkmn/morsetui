@@ -1,4 +1,7 @@
 use std::collections::HashMap;
+use std::fs;
+use std::io::{self, Read};
+use std::path::Path;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 enum Symbol {
@@ -6,6 +9,7 @@ enum Symbol {
     Dash,
     LetterSpace,
     WordSpace,
+    LineSpace,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -143,45 +147,30 @@ fn decode(input: MorseCode) -> String {
     decoded_string
 }
 
-fn show_morse_map() -> () {
-    println!("---- Morse Code Map ----");
-    for (char_val, morse_symbols) in MORSE_CODE_MAP.iter() {
-        let morse_string: String = morse_symbols
-            .iter()
-            .map(|&s| match s {
-                Symbol::Dot => '.',
-                Symbol::Dash => '-',
-                _ => '?',
-            })
-            .collect();
-        println!("'{}': {}", char_val, morse_string);
-    }
-    println!("---- ----- ---- --- ----");
+fn encode_from_file<P: AsRef<Path>>(input: P) -> io::Result<MorseCode> {
+    todo!()
+}
+
+fn decode_from_file<P: AsRef<Path>>(input: P) -> io::Result<Vec<String>> {
+    todo!()
+}
+
+fn print_morse_code(code: MorseCode) {
+    todo!()
+}
+
+fn write_morse_code<P: AsRef<Path>>(code: MorseCode, output: P) -> io::Result<()> {
+    todo!()
+}
+
+fn print_text(input: Vec<String>) {
+    todo!()
+}
+
+fn write_text<P: AsRef<Path>>(input: P, output: P) -> io::Result<()> {
+    todo!()
 }
 
 fn main() -> () {
-    show_morse_map();
-
-    let message = "Hello World";
-    println!("Original message: {}", message);
-
-    let encoded = encode(message.to_string());
-    println!("Encoded Morse: {:?}", encoded);
-
-    let decoded = decode(encoded);
-    println!("Decoded message: {}", decoded);
-
-    let message2 = "SOS. THIS IS A TEST";
-    println!("\nOriginal message: {}", message2);
-    let encoded2 = encode(message2.to_string());
-    println!("Encoded Morse: {:?}", encoded2);
-    let decoded2 = decode(encoded2);
-    println!("Decoded message: {}", decoded2);
-
-    let message3 = "RUST PROGRAMMING";
-    println!("\nOriginal message: {}", message3);
-    let encoded3 = encode(message3.to_string());
-    println!("Encoded Morse: {:?}", encoded3);
-    let decoded3 = decode(encoded3);
-    println!("Decoded message: {}", decoded3);
+    todo!()
 }
