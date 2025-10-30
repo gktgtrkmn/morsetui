@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use std::fs;
-use std::io::{self, Read};
+use std::io::{self};
 use std::path::Path;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -9,7 +8,6 @@ enum Symbol {
     Dash,
     LetterSpace,
     WordSpace,
-    LineSpace,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -145,30 +143,6 @@ fn decode(input: MorseCode) -> String {
         eprintln!("Warning: Unknown Morse sequence at the end of message");
     }
     decoded_string
-}
-
-fn encode_from_file<P: AsRef<Path>>(input: P) -> io::Result<MorseCode> {
-    todo!()
-}
-
-fn decode_from_file<P: AsRef<Path>>(input: P) -> io::Result<Vec<String>> {
-    todo!()
-}
-
-fn print_morse_code(code: MorseCode) {
-    todo!()
-}
-
-fn write_morse_code<P: AsRef<Path>>(code: MorseCode, output: P) -> io::Result<()> {
-    todo!()
-}
-
-fn print_text(input: Vec<String>) {
-    todo!()
-}
-
-fn write_text<P: AsRef<Path>>(input: P, output: P) -> io::Result<()> {
-    todo!()
 }
 
 fn main() -> () {
