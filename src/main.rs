@@ -1,6 +1,18 @@
+use crossterm::{
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
+    execute,
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+};
+use ratatui::{
+    Terminal,
+    backend::CrosstermBackend,
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Modifier, Style},
+    text::{Line, Span},
+    widgets::{Block, Borders, Paragraph, Wrap},
+};
 use std::collections::HashMap;
-use std::io::{self};
-use std::path::Path;
+use std::io;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 enum Symbol {
@@ -222,11 +234,158 @@ impl App {
         self.mode = match self.mode {
             InputMode::Encode => InputMode::Decode,
             InputMode::Decode => InputMode::Encode,
-        }
+        };
         self.update_output();
     }
 }
 
-fn main() -> () {
-    todo!()
+fn main() -> Result<(), io::Error> {
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    let mut app = App::new();
+    let res = run_app(&mut terminal, &mut app);
+
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
+
+    if let Err(err) = res {
+        println!("{:?}", err)
+    }
+
+    Ok(())
+}
+
+fn run_app<B: ratatui::backend::Backend>(
+    terminal: &mut Terminal<B>,
+    app: &mut App,
+) -> io::Result<()> {
+    loop {
+        terminal.draw(|f| ui(f, app))?;
+
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => return Ok(()),
+                    KeyCode::Char('c') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
+                        return Ok(());
+                    }
+                    KeyCode::Tab => {
+                        app.toggle_mode();
+                    }
+                    KeyCode::Char(c) => {
+                        app.input.push(c);
+                        app.update_output();
+                    }
+                    KeyCode::Backspace => {
+                        app.input.pop();
+                        app.update_output();
+                    }
+                    KeyCode::Enter => {
+                        app.input.push('\n');
+                        app.update_output();
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+}
+
+fn ui(f: &mut ratatui::Frame, app: &App) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3),
+            Constraint::Min(5),
+            Constraint::Length(3),
+            Constraint::Min(5),
+            Constraint::Length(3),
+        ])
+        .split(f.area());
+
+    let title = match app.mode {
+        InputMode::Encode => "Morse Code Encoder (Press Tab to switch to Decoder)",
+        InputMode::Decode => "Morse Code Decoder (Press Tab to switch to Encoder)",
+    };
+
+    let title_block = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default());
+
+    let title_text = Paragraph::new(title)
+        .block(title_block)
+        .style(Style::default().fg(Color::Cyan));
+    f.render_widget(title_text, chunks[0]);
+
+    let input_label = match app.mode {
+        InputMode::Encode => "Input (Text)",
+        InputMode::Decode => "Input (Morse: use . or - and spaces)",
+    };
+
+    let input_block = Block::default()
+        .borders(Borders::ALL)
+        .title(input_label)
+        .style(Style::default());
+
+    let input = Paragraph::new(app.input.as_str())
+        .block(input_block)
+        .wrap(Wrap { trim: false });
+    f.render_widget(input, chunks[1]);
+
+    let arrow_block = Block::default()
+        .borders(Borders::NONE)
+        .style(Style::default());
+
+    let arrow = Paragraph::new("↓")
+        .block(arrow_block)
+        .style(Style::default().fg(Color::Yellow))
+        .alignment(ratatui::layout::Alignment::Center);
+    f.render_widget(arrow, chunks[2]);
+
+    let output_label = match app.mode {
+        InputMode::Encode => "Output (Morse Code)",
+        InputMode::Decode => "Output (Text)",
+    };
+
+    let output_block = Block::default()
+        .borders(Borders::ALL)
+        .title(output_label)
+        .style(Style::default());
+
+    let output = Paragraph::new(app.output.as_str())
+        .block(output_block)
+        .wrap(Wrap { trim: false });
+    f.render_widget(output, chunks[3]);
+
+    let help_block = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default());
+
+    let help_text = Line::from(vec![
+        Span::raw("Press "),
+        Span::styled(
+            "Tab",
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" to switch modes | "),
+        Span::styled(
+            "Q",
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" to quit"),
+    ]);
+
+    let help = Paragraph::new(help_text).block(help_block);
+    f.render_widget(help, chunks[4]);
 }
