@@ -23,6 +23,19 @@ impl MorseCode {
     pub fn push(&mut self, symbol: Symbol) {
         self.code.push(symbol);
     }
+
+    pub fn to_display_string(&self) -> String {
+        let mut result = String::new();
+        for symbol in &self.code {
+            match symbol {
+                Symbol::Dot => result.push('.'),
+                Symbol::Dash => result.push('-'),
+                Symbol::LetterSpace => result.push(' '),
+                Symbol::WordSpace => result.push_str("   "),
+            }
+        }
+        result
+    }
 }
 
 lazy_static::lazy_static! {
@@ -98,8 +111,6 @@ fn encode(input: String) -> MorseCode {
                 for &symbol in morse_symbols {
                     encoded_msg.push(symbol);
                 }
-            } else {
-                eprintln!("Warning: Character '{}' not supported, skipping.", ch);
             }
         }
     }
@@ -119,8 +130,7 @@ fn decode(input: MorseCode) -> String {
                 if let Some(&char_val) = DECODE_MAP.get(&current_char_symbols) {
                     decoded_string.push(char_val);
                 } else {
-                    decoded_string.push_str("[UNKNOWN_CHAR]");
-                    eprintln!("Warning: Unknown Morse sequence for characters, skipping.");
+                    decoded_string.push('?');
                 }
                 current_char_symbols.clear();
             }
@@ -128,8 +138,7 @@ fn decode(input: MorseCode) -> String {
                 if let Some(&char_val) = DECODE_MAP.get(&current_char_symbols) {
                     decoded_string.push(char_val);
                 } else if !current_char_symbols.is_empty() {
-                    decoded_string.push_str("[UNKNOWN_CHAR]");
-                    eprintln!("Warning: Unknown Morse sequence for character, skipping");
+                    decoded_string.push('?');
                 }
                 current_char_symbols.clear();
                 decoded_string.push(' ');
@@ -139,10 +148,83 @@ fn decode(input: MorseCode) -> String {
     if let Some(&char_val) = DECODE_MAP.get(&current_char_symbols) {
         decoded_string.push(char_val);
     } else if !current_char_symbols.is_empty() {
-        decoded_string.push_str("[UNKNOWN_CHAR]");
-        eprintln!("Warning: Unknown Morse sequence at the end of message");
+        decoded_string.push('?');
     }
     decoded_string
+}
+
+enum InputMode {
+    Encode,
+    Decode,
+}
+
+struct App {
+    input: String,
+    mode: InputMode,
+    output: String,
+}
+
+impl App {
+    fn new() -> App {
+        App {
+            input: String::new(),
+            mode: InputMode::Encode,
+            output: String::new(),
+        }
+    }
+
+    fn update_output(&mut self) {
+        match self.mode {
+            InputMode::Encode => {
+                let encoded = encode(self.input.clone());
+                self.output = encoded.to_display_string();
+            }
+            InputMode::Decode => {
+                let morse = self.parse_morse_input();
+                self.output = decode(morse);
+            }
+        }
+    }
+
+    fn parse_morse_input(&self) -> MorseCode {
+        let mut morse = MorseCode::new();
+        let mut chars = self.input.chars().peekable();
+        let mut space_count = 0;
+
+        while let Some(ch) = chars.next() {
+            match ch {
+                '.' => {
+                    morse.push(Symbol::Dot);
+                    space_count = 0;
+                }
+                '-' => {
+                    morse.push(Symbol::Dash);
+                    space_count = 0;
+                }
+                ' ' => {
+                    space_count += 1;
+                    if space_count == 1 {
+                        morse.push(Symbol::LetterSpace);
+                    } else if space_count >= 3 {
+                        if let Some(&Symbol::LetterSpace) = morse.code.last() {
+                            morse.code.pop();
+                        }
+                        morse.push(Symbol::WordSpace);
+                    }
+                }
+                _ => {}
+            }
+        }
+        morse
+    }
+
+    fn toggle_mode(&mut self) {
+        self.mode = match self.mode {
+            InputMode::Encode => InputMode::Decode,
+            InputMode::Decode => InputMode::Encode,
+        }
+        self.update_output();
+    }
 }
 
 fn main() -> () {
