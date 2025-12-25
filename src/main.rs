@@ -274,7 +274,7 @@ fn run_app<B: ratatui::backend::Backend>(
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
                 match key.code {
-                    KeyCode::Char('q') => return Ok(()),
+                    KeyCode::Esc => return Ok(()),
                     KeyCode::Char('c') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
                         return Ok(());
                     }
@@ -380,7 +380,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
         ),
         Span::raw(" to switch modes | "),
         Span::styled(
-            "Q",
+            "ESC",
             Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
         ),
         Span::raw(" to quit"),
