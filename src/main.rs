@@ -235,6 +235,7 @@ impl App {
             InputMode::Encode => InputMode::Decode,
             InputMode::Decode => InputMode::Encode,
         };
+        self.input = String::new();
         self.update_output();
     }
 }
