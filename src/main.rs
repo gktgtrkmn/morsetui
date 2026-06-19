@@ -284,6 +284,10 @@ fn run_app<B: ratatui::backend::Backend>(
                     KeyCode::Tab => {
                         app.toggle_mode();
                     }
+                    KeyCode::Char('r') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
+                        app.input = String::new();
+                        app.update_output();
+                    }
                     KeyCode::Char(c) => match app.mode {
                         InputMode::Encode => {
                             app.input.push(c);
@@ -390,6 +394,13 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
                 .add_modifier(Modifier::BOLD),
         ),
         Span::raw(" to switch modes | "),
+        Span::styled(
+            "ctrl-r",
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" to reset input | "),
         Span::styled(
             "ESC",
             Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
