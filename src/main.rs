@@ -12,6 +12,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Wrap},
 };
 use std::collections::HashMap;
+use std::fmt;
 use std::io;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -35,18 +36,19 @@ impl MorseCode {
     pub fn push(&mut self, symbol: Symbol) {
         self.code.push(symbol);
     }
+}
 
-    pub fn to_display_string(&self) -> String {
-        let mut result = String::new();
+impl fmt::Display for MorseCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for symbol in &self.code {
             match symbol {
-                Symbol::Dot => result.push('.'),
-                Symbol::Dash => result.push('-'),
-                Symbol::LetterSpace => result.push(' '),
-                Symbol::WordSpace => result.push_str("   "),
+                Symbol::Dot => write!(f, ".")?,
+                Symbol::Dash => write!(f, "-")?,
+                Symbol::LetterSpace => write!(f, " ")?,
+                Symbol::WordSpace => write!(f, "   ")?,
             }
         }
-        result
+        Ok(())
     }
 }
 
@@ -102,7 +104,7 @@ lazy_static::lazy_static! {
     };
 }
 
-fn encode(input: String) -> MorseCode {
+fn encode(input: &str) -> MorseCode {
     let mut encoded_msg: MorseCode = MorseCode::new();
     let mut first_word: bool = true;
 
@@ -188,8 +190,8 @@ impl App {
     fn update_output(&mut self) {
         match self.mode {
             InputMode::Encode => {
-                let encoded = encode(self.input.clone());
-                self.output = encoded.to_display_string();
+                let encoded = encode(&self.input);
+                self.output = encoded.to_string();
             }
             InputMode::Decode => {
                 let morse = self.parse_morse_input();
@@ -282,10 +284,18 @@ fn run_app<B: ratatui::backend::Backend>(
                     KeyCode::Tab => {
                         app.toggle_mode();
                     }
-                    KeyCode::Char(c) => {
-                        app.input.push(c);
-                        app.update_output();
-                    }
+                    KeyCode::Char(c) => match app.mode {
+                        InputMode::Encode => {
+                            app.input.push(c);
+                            app.update_output();
+                        }
+                        InputMode::Decode => {
+                            if c == '.' || c == '-' || c == ' ' {
+                                app.input.push(c);
+                                app.update_output();
+                            }
+                        }
+                    },
                     KeyCode::Backspace => {
                         app.input.pop();
                         app.update_output();
